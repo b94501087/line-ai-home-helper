@@ -114,14 +114,24 @@ function wantsHuman(text) {
   return /真人|人工|客服|轉接|聯絡人|專人|電話/.test(text);
 }
 
+function sanitizeLineReply(text) {
+  return String(text || "")
+    .replace(/\*\*/g, "")
+    .replace(/__/g, "")
+    .replace(/`/g, "")
+    .replace(/^\s{0,3}#{1,6}\s*/gm, "")
+    .trim();
+}
+
 async function createAiReply(userId, userText) {
-  if (wantsHuman(userText)) return config.humanHandoffText;
+  if (wantsHuman(userText)) return sanitizeLineReply(config.humanHandoffText);
 
-  if (config.aiProvider === "gemini") {
-    return createGeminiReply(userId, userText);
-  }
+  const reply =
+    config.aiProvider === "gemini"
+      ? await createGeminiReply(userId, userText)
+      : await createOpenAiReply(userId, userText);
 
-  return createOpenAiReply(userId, userText);
+  return sanitizeLineReply(reply);
 }
 
 async function createOpenAiReply(userId, userText) {
@@ -228,6 +238,8 @@ async function createGeminiReply(userId, userText) {
 }
 
 async function replyToLine(replyToken, text) {
+  const cleanText = sanitizeLineReply(text) || "目前系統忙碌中，請稍後再試。";
+
   const response = await fetch("https://api.line.me/v2/bot/message/reply", {
     method: "POST",
     headers: {
@@ -236,7 +248,7 @@ async function replyToLine(replyToken, text) {
     },
     body: JSON.stringify({
       replyToken,
-      messages: [{ type: "text", text: text.slice(0, 5000) }]
+      messages: [{ type: "text", text: cleanText.slice(0, 5000) }]
     })
   });
 
