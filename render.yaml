@@ -2,7 +2,7 @@ services:
   - type: web
     name: line-ai-home-helper
     runtime: node
-    region: singapore
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /
