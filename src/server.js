@@ -173,7 +173,24 @@ app.get("/", (_req, res) => {
 });
 
 app.post("/webhook", async (req, res) => {
+  console.log(
+    JSON.stringify({
+      at: new Date().toISOString(),
+      path: "/webhook",
+      hasSignature: Boolean(req.get("x-line-signature")),
+      bodyBytes: req.rawBody?.length || 0,
+      eventCount: req.body?.events?.length || 0
+    })
+  );
+
   if (!verifyLineSignature(req)) {
+    console.warn(
+      JSON.stringify({
+        at: new Date().toISOString(),
+        path: "/webhook",
+        error: "Invalid LINE signature"
+      })
+    );
     res.status(401).json({ error: "Invalid LINE signature" });
     return;
   }
@@ -182,8 +199,18 @@ app.post("/webhook", async (req, res) => {
 
   for (const event of req.body.events || []) {
     try {
+      console.log(
+        JSON.stringify({
+          at: new Date().toISOString(),
+          eventType: event.type,
+          messageType: event.message?.type,
+          sourceType: event.source?.type
+        })
+      );
+
       if (event.type === "follow" && event.replyToken) {
         await replyToLine(event.replyToken, `你好，我是${config.botName}，很高興為你服務。`);
+        console.log(JSON.stringify({ at: new Date().toISOString(), result: "follow replied" }));
         continue;
       }
 
@@ -199,10 +226,27 @@ app.post("/webhook", async (req, res) => {
       remember(userId, "assistant", reply);
 
       await replyToLine(event.replyToken, reply);
+      console.log(JSON.stringify({ at: new Date().toISOString(), result: "message replied" }));
     } catch (error) {
-      console.error(error);
+      console.error(
+        JSON.stringify({
+          at: new Date().toISOString(),
+          error: error.message,
+          stack: error.stack
+        })
+      );
       if (event.replyToken) {
-        await replyToLine(event.replyToken, "目前系統忙碌中，請稍後再試。");
+        try {
+          await replyToLine(event.replyToken, "目前系統忙碌中，請稍後再試。");
+        } catch (replyError) {
+          console.error(
+            JSON.stringify({
+              at: new Date().toISOString(),
+              error: replyError.message,
+              stack: replyError.stack
+            })
+          );
+        }
       }
     }
   }
