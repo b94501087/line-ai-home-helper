@@ -14,6 +14,10 @@ const knowledgePath = path.join(__dirname, "..", "data", "knowledge.md");
 const config = {
   port: Number(process.env.PORT || 3000),
   lineChannelSecret: process.env.LINE_CHANNEL_SECRET,
+  lineChannelSecretFallbacks: (process.env.LINE_CHANNEL_SECRET_FALLBACKS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean),
   lineChannelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   openaiApiKey: process.env.OPENAI_API_KEY,
   openaiModel: process.env.OPENAI_MODEL,
@@ -45,22 +49,27 @@ function rawBodySaver(req, _res, buf) {
   req.rawBody = buf;
 }
 
-function verifyLineSignature(req) {
+function lineSignatureMatch(req) {
   const signature = req.get("x-line-signature");
-  if (!signature || !req.rawBody) return false;
+  if (!signature || !req.rawBody) return { ok: false, matchedSecretIndex: -1 };
 
-  const digest = crypto
-    .createHmac("sha256", config.lineChannelSecret)
-    .update(req.rawBody)
-    .digest("base64");
+  const secrets = [config.lineChannelSecret, ...config.lineChannelSecretFallbacks].filter(Boolean);
 
   const signatureBuffer = Buffer.from(signature);
-  const digestBuffer = Buffer.from(digest);
 
-  return (
-    signatureBuffer.length === digestBuffer.length &&
-    crypto.timingSafeEqual(signatureBuffer, digestBuffer)
-  );
+  for (const [index, secret] of secrets.entries()) {
+    const digest = crypto.createHmac("sha256", secret).update(req.rawBody).digest("base64");
+    const digestBuffer = Buffer.from(digest);
+
+    if (
+      signatureBuffer.length === digestBuffer.length &&
+      crypto.timingSafeEqual(signatureBuffer, digestBuffer)
+    ) {
+      return { ok: true, matchedSecretIndex: index };
+    }
+  }
+
+  return { ok: false, matchedSecretIndex: -1 };
 }
 
 function getKnowledge() {
@@ -173,22 +182,27 @@ app.get("/", (_req, res) => {
 });
 
 app.post("/webhook", async (req, res) => {
+  const signatureMatch = lineSignatureMatch(req);
+
   console.log(
     JSON.stringify({
       at: new Date().toISOString(),
       path: "/webhook",
       hasSignature: Boolean(req.get("x-line-signature")),
       bodyBytes: req.rawBody?.length || 0,
-      eventCount: req.body?.events?.length || 0
+      eventCount: req.body?.events?.length || 0,
+      signatureOk: signatureMatch.ok,
+      matchedSecretIndex: signatureMatch.matchedSecretIndex
     })
   );
 
-  if (!verifyLineSignature(req)) {
+  if (!signatureMatch.ok) {
     console.warn(
       JSON.stringify({
         at: new Date().toISOString(),
         path: "/webhook",
-        error: "Invalid LINE signature"
+        error: "Invalid LINE signature",
+        secretCandidateCount: 1 + config.lineChannelSecretFallbacks.length
       })
     );
     res.status(401).json({ error: "Invalid LINE signature" });
@@ -255,5 +269,11 @@ app.post("/webhook", async (req, res) => {
 requireEnv();
 
 app.listen(config.port, () => {
-  console.log(`LINE AI bot is running on port ${config.port}`);
+  console.log(
+    JSON.stringify({
+      at: new Date().toISOString(),
+      message: `LINE AI bot is running on port ${config.port}`,
+      lineSecretCandidateCount: 1 + config.lineChannelSecretFallbacks.length
+    })
+  );
 });
