@@ -21,8 +21,11 @@ const config = {
     .map((value) => value.trim())
     .filter(Boolean),
   lineChannelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  aiProvider: process.env.AI_PROVIDER || "openai",
   openaiApiKey: process.env.OPENAI_API_KEY,
   openaiModel: process.env.OPENAI_MODEL,
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  geminiModel: process.env.GEMINI_MODEL || "gemini-3.5-flash",
   botName: process.env.BOT_NAME || "客服小幫手",
   businessName: process.env.BUSINESS_NAME || "我們",
   replyLanguage: process.env.REPLY_LANGUAGE || "繁體中文",
@@ -33,12 +36,20 @@ const config = {
 const conversations = new Map();
 
 function requireEnv() {
-  const missing = Object.entries({
+  const required = {
     LINE_CHANNEL_SECRET: config.lineChannelSecret,
-    LINE_CHANNEL_ACCESS_TOKEN: config.lineChannelAccessToken,
-    OPENAI_API_KEY: config.openaiApiKey,
-    OPENAI_MODEL: config.openaiModel
-  })
+    LINE_CHANNEL_ACCESS_TOKEN: config.lineChannelAccessToken
+  };
+
+  if (config.aiProvider === "gemini") {
+    required.GEMINI_API_KEY = config.geminiApiKey;
+    required.GEMINI_MODEL = config.geminiModel;
+  } else {
+    required.OPENAI_API_KEY = config.openaiApiKey;
+    required.OPENAI_MODEL = config.openaiModel;
+  }
+
+  const missing = Object.entries(required)
     .filter(([, value]) => !value)
     .map(([key]) => key);
 
@@ -106,6 +117,14 @@ function wantsHuman(text) {
 async function createAiReply(userId, userText) {
   if (wantsHuman(userText)) return config.humanHandoffText;
 
+  if (config.aiProvider === "gemini") {
+    return createGeminiReply(userId, userText);
+  }
+
+  return createOpenAiReply(userId, userText);
+}
+
+async function createOpenAiReply(userId, userText) {
   const history = getConversation(userId)
     .map((message) => `${message.role === "user" ? "使用者" : "助理"}：${message.content}`)
     .join("\n");
@@ -150,6 +169,56 @@ async function createAiReply(userId, userText) {
     data.output_text ||
     data.output
       ?.flatMap((item) => item.content || [])
+      .map((content) => content.text)
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+
+  return text || "我目前無法產生回覆，稍後請真人協助你。";
+}
+
+async function createGeminiReply(userId, userText) {
+  const history = getConversation(userId)
+    .map((message) => `${message.role === "user" ? "使用者" : "助理"}：${message.content}`)
+    .join("\n");
+
+  const systemInstruction =
+    `你是 ${config.businessName} 的 ${config.botName}。` +
+    `請用${config.replyLanguage}回覆，語氣自然、清楚、簡短。` +
+    "只能根據知識庫和對話上下文回答；不確定時請說需要真人確認。";
+
+  const input =
+    `知識庫：\n${getKnowledge()}\n\n` +
+    `最近對話：\n${history || "尚無"}\n\n` +
+    `使用者最新訊息：${userText}`;
+
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    method: "POST",
+    headers: {
+      "x-goog-api-key": config.geminiApiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: config.geminiModel,
+      system_instruction: systemInstruction,
+      input,
+      generation_config: {
+        thinking_level: "low"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Gemini API error ${response.status}: ${detail}`);
+  }
+
+  const data = await response.json();
+  const text =
+    data.output_text ||
+    data.outputText ||
+    data.steps
+      ?.flatMap((step) => step.content || step.contents || [])
       .map((content) => content.text)
       .filter(Boolean)
       .join("\n")
