@@ -13,6 +13,8 @@ const knowledgePath = path.join(__dirname, "..", "data", "knowledge.md");
 
 const config = {
   port: Number(process.env.PORT || 3000),
+  skipLineSignatureVerification:
+    process.env.SKIP_LINE_SIGNATURE_VERIFICATION === "true",
   lineChannelSecret: process.env.LINE_CHANNEL_SECRET,
   lineChannelSecretFallbacks: (process.env.LINE_CHANNEL_SECRET_FALLBACKS || "")
     .split(",")
@@ -192,11 +194,12 @@ app.post("/webhook", async (req, res) => {
       bodyBytes: req.rawBody?.length || 0,
       eventCount: req.body?.events?.length || 0,
       signatureOk: signatureMatch.ok,
-      matchedSecretIndex: signatureMatch.matchedSecretIndex
+      matchedSecretIndex: signatureMatch.matchedSecretIndex,
+      signatureVerificationSkipped: config.skipLineSignatureVerification
     })
   );
 
-  if (!signatureMatch.ok) {
+  if (!config.skipLineSignatureVerification && !signatureMatch.ok) {
     console.warn(
       JSON.stringify({
         at: new Date().toISOString(),
@@ -273,6 +276,7 @@ app.listen(config.port, () => {
     JSON.stringify({
       at: new Date().toISOString(),
       message: `LINE AI bot is running on port ${config.port}`,
+      skipLineSignatureVerification: config.skipLineSignatureVerification,
       lineSecretCandidateCount: 1 + config.lineChannelSecretFallbacks.length
     })
   );
