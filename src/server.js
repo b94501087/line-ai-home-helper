@@ -271,8 +271,8 @@ async function createGeminiReply(userId, userText) {
 
 function normalizeAudioMimeType(mimeType) {
   const cleanMimeType = String(mimeType || "").split(";")[0].trim().toLowerCase();
-  if (!cleanMimeType || cleanMimeType === "application/octet-stream") return "audio/mp4";
-  if (cleanMimeType === "audio/x-m4a") return "audio/mp4";
+  if (!cleanMimeType || cleanMimeType === "application/octet-stream") return "audio/m4a";
+  if (cleanMimeType === "audio/mp4" || cleanMimeType === "audio/x-m4a") return "audio/m4a";
   return cleanMimeType;
 }
 
