@@ -269,6 +269,81 @@ async function createGeminiReply(userId, userText) {
   return text || "我目前無法產生回覆，稍後請真人協助你。";
 }
 
+function normalizeAudioMimeType(mimeType) {
+  const cleanMimeType = String(mimeType || "").split(";")[0].trim().toLowerCase();
+  if (!cleanMimeType || cleanMimeType === "application/octet-stream") return "audio/mp4";
+  if (cleanMimeType === "audio/x-m4a") return "audio/mp4";
+  return cleanMimeType;
+}
+
+async function downloadLineMessageContent(messageId) {
+  const response = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${config.lineChannelAccessToken}`
+    }
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`LINE content download error ${response.status}: ${detail}`);
+  }
+
+  const mimeType = normalizeAudioMimeType(response.headers.get("content-type"));
+  const buffer = Buffer.from(await response.arrayBuffer());
+  return { buffer, mimeType };
+}
+
+async function transcribeLineAudio(messageId) {
+  if (config.aiProvider !== "gemini") {
+    throw new Error("Audio transcription requires Gemini provider");
+  }
+
+  const { buffer, mimeType } = await downloadLineMessageContent(messageId);
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    method: "POST",
+    headers: {
+      "x-goog-api-key": config.geminiApiKey,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: config.geminiModel,
+      input: [
+        {
+          type: "text",
+          text: "請將這段 LINE 語音轉成繁體中文文字，只輸出使用者實際說的內容，不要加解釋。"
+        },
+        {
+          type: "audio",
+          data: buffer.toString("base64"),
+          mime_type: mimeType
+        }
+      ],
+      generation_config: {
+        thinking_level: "low"
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Gemini audio transcription error ${response.status}: ${detail}`);
+  }
+
+  const data = await response.json();
+  const text =
+    data.output_text ||
+    data.outputText ||
+    data.steps
+      ?.flatMap((step) => step.content || step.contents || [])
+      .map((content) => content.text)
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+
+  return sanitizeLineReply(text);
+}
+
 async function replyToLine(replyToken, text) {
   const cleanText = sanitizeLineReply(text) || "目前系統忙碌中，請稍後再試。";
 
@@ -344,18 +419,36 @@ app.post("/webhook", async (req, res) => {
         continue;
       }
 
-      if (event.type !== "message" || event.message?.type !== "text") {
+      if (event.type !== "message") {
         continue;
       }
 
       const userId = sourceId(event.source);
-      const userText = event.message.text.trim();
+      let userText = "";
+      let transcript = "";
+
+      if (event.message?.type === "text") {
+        userText = event.message.text.trim();
+      } else if (event.message?.type === "audio") {
+        transcript = await transcribeLineAudio(event.message.id);
+        if (!transcript) {
+          await replyToLine(event.replyToken, "我有收到語音，但目前辨識不清楚，方便改用文字再傳一次嗎？");
+          console.log(JSON.stringify({ at: new Date().toISOString(), result: "audio unclear" }));
+          continue;
+        }
+        userText = `語音轉文字：${transcript}`;
+      } else {
+        continue;
+      }
+
       remember(userId, "user", userText);
 
       const reply = await createAiReply(userId, userText);
-      remember(userId, "assistant", reply);
+      const finalReply =
+        transcript ? `我聽到您問：「${transcript}」\n\n${reply}` : reply;
+      remember(userId, "assistant", finalReply);
 
-      await replyToLine(event.replyToken, reply);
+      await replyToLine(event.replyToken, finalReply);
       console.log(JSON.stringify({ at: new Date().toISOString(), result: "message replied" }));
     } catch (error) {
       console.error(
