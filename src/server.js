@@ -26,7 +26,7 @@ const config = {
   openaiModel: process.env.OPENAI_MODEL,
   geminiApiKey: process.env.GEMINI_API_KEY,
   geminiModel: process.env.GEMINI_MODEL || "gemini-3.5-flash",
-  geminiGoogleSearch: process.env.GEMINI_GOOGLE_SEARCH !== "false",
+  geminiGoogleSearch: process.env.GEMINI_GOOGLE_SEARCH === "true",
   botName: process.env.BOT_NAME || "客服小幫手",
   businessName: process.env.BUSINESS_NAME || "我們",
   replyLanguage: process.env.REPLY_LANGUAGE || "繁體中文",
@@ -220,7 +220,7 @@ async function createGeminiReply(userId, userText) {
     requestBody.tools = [{ type: "google_search" }];
   }
 
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+  let response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
     method: "POST",
     headers: {
       "x-goog-api-key": config.geminiApiKey,
@@ -228,6 +228,27 @@ async function createGeminiReply(userId, userText) {
     },
     body: JSON.stringify(requestBody)
   });
+
+  if (!response.ok && config.geminiGoogleSearch) {
+    const detail = await response.text();
+    console.warn(
+      JSON.stringify({
+        at: new Date().toISOString(),
+        warning: "Gemini google_search failed; retrying without search",
+        status: response.status,
+        detail
+      })
+    );
+    delete requestBody.tools;
+    response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: {
+        "x-goog-api-key": config.geminiApiKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+  }
 
   if (!response.ok) {
     const detail = await response.text();
