@@ -23,6 +23,8 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-3.5-flash
+      - key: GEMINI_GOOGLE_SEARCH
+        value: true
       - key: BOT_NAME
         value: 和芮居家小幫手
       - key: BUSINESS_NAME
