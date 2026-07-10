@@ -26,6 +26,7 @@ const config = {
   openaiModel: process.env.OPENAI_MODEL,
   geminiApiKey: process.env.GEMINI_API_KEY,
   geminiModel: process.env.GEMINI_MODEL || "gemini-3.5-flash",
+  geminiGoogleSearch: process.env.GEMINI_GOOGLE_SEARCH !== "false",
   botName: process.env.BOT_NAME || "客服小幫手",
   businessName: process.env.BUSINESS_NAME || "我們",
   replyLanguage: process.env.REPLY_LANGUAGE || "繁體中文",
@@ -145,7 +146,9 @@ async function createOpenAiReply(userId, userText) {
       content:
         `你是 ${config.businessName} 的 ${config.botName}。` +
         `請用${config.replyLanguage}回覆，語氣自然、清楚、簡短。` +
-        "只能根據知識庫和對話上下文回答；不確定時請說需要真人確認。"
+        "公司服務、費用、名額、資格、報名、個案照護與承諾事項只能根據知識庫和對話上下文回答；" +
+        "一般公開資訊或生活資訊可用保守方式協助回答，並提醒以最新網路資訊或官方公告為準；" +
+        "若仍不清楚或涉及公司判斷，請請客戶來電 02-2912-1860 向公司確認。"
     },
     {
       role: "user",
@@ -195,12 +198,27 @@ async function createGeminiReply(userId, userText) {
   const systemInstruction =
     `你是 ${config.businessName} 的 ${config.botName}。` +
     `請用${config.replyLanguage}回覆，語氣自然、清楚、簡短。` +
-    "只能根據知識庫和對話上下文回答；不確定時請說需要真人確認。";
+    "公司服務、費用、名額、資格、報名、個案照護與承諾事項只能根據知識庫和對話上下文回答；" +
+    "一般公開資訊或生活資訊可用保守方式協助回答，並提醒以最新網路資訊或官方公告為準；" +
+    "若仍不清楚或涉及公司判斷，請請客戶來電 02-2912-1860 向公司確認。";
 
   const input =
     `知識庫：\n${getKnowledge()}\n\n` +
     `最近對話：\n${history || "尚無"}\n\n` +
     `使用者最新訊息：${userText}`;
+
+  const requestBody = {
+    model: config.geminiModel,
+    system_instruction: systemInstruction,
+    input,
+    generation_config: {
+      thinking_level: "low"
+    }
+  };
+
+  if (config.geminiGoogleSearch) {
+    requestBody.tools = [{ type: "google_search" }];
+  }
 
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
     method: "POST",
@@ -208,14 +226,7 @@ async function createGeminiReply(userId, userText) {
       "x-goog-api-key": config.geminiApiKey,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model: config.geminiModel,
-      system_instruction: systemInstruction,
-      input,
-      generation_config: {
-        thinking_level: "low"
-      }
-    })
+    body: JSON.stringify(requestBody)
   });
 
   if (!response.ok) {
