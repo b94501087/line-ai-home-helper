@@ -1,0 +1,356 @@
+<meta name="hz:canvas-width" content="1080">
+<meta name="hz:canvas-height" content="1920">
+<style>
+  html,body{margin:0;padding:0;background:#000;}
+  .slide{width:1080px;height:1920px;position:relative;overflow:hidden;}
+  svg{display:block;width:1080px;height:1920px;}
+
+  /* ---- master timeline: 10s ---- */
+  .anim{animation-duration:10s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.45,.05,.35,1);}
+
+  #gm       {animation-name:gmMove;}
+  #gmTorso  {animation-name:gmLean;   transform-origin:400px 1310px;}
+  #gmThigh  {animation-name:gmThigh;  transform-origin:400px 1310px;}
+  #gmShin   {animation-name:gmShin;   transform-origin:570px 1316px;}
+  #gmArmA   {animation-name:gmArmA;   transform-origin:432px 1120px;}
+  #gmArmB   {animation-name:gmArmB;   transform-origin:388px 1124px;}
+  #gmThumb  {animation-name:thumbPop; transform-origin:512px 1244px;}
+
+  #cg       {animation-name:cgMove;}
+  #cgTorso  {animation-name:cgLean;   transform-origin:250px 1170px;}
+  #cgArmFar {animation-name:cgArmFar; transform-origin:222px 1000px;}
+  #cgArmNear{animation-name:cgArmNear;transform-origin:286px 1004px;}
+  #cgLegF   {animation-name:cgLegF;   transform-origin:250px 1170px;}
+  #cgLegB   {animation-name:cgLegB;   transform-origin:250px 1170px;}
+
+  /* grandma: sit -> rise -> travel right -> sit into wheelchair */
+  @keyframes gmMove{
+     0%,15%   {transform:translate(0px,0px);}
+     30%      {transform:translate(4px,-10px);}
+     55%      {transform:translate(70px,-140px);}
+     75%      {transform:translate(388px,-134px);}
+     90%,100% {transform:translate(400px,36px);}
+  }
+  @keyframes gmLean{
+     0%,15%   {transform:rotate(0deg);}
+     30%      {transform:rotate(9deg);}
+     55%      {transform:rotate(3deg);}
+     75%      {transform:rotate(2deg);}
+     90%,100% {transform:rotate(0deg);}
+  }
+  @keyframes gmThigh{
+     0%,15%   {transform:rotate(0deg);}
+     30%      {transform:rotate(4deg);}
+     55%      {transform:rotate(84deg);}
+     75%      {transform:rotate(84deg);}
+     90%,100% {transform:rotate(0deg);}
+  }
+  @keyframes gmShin{
+     0%,15%   {transform:rotate(0deg);}
+     30%      {transform:rotate(-6deg);}
+     55%      {transform:rotate(-84deg);}
+     75%      {transform:rotate(-84deg);}
+     90%,100% {transform:rotate(0deg);}
+  }
+  /* grandma's near arm rests on caregiver's forearm, then rises into a thumbs-up
+     out to her right — clear of her face */
+  @keyframes gmArmA{
+     0%,12%   {transform:rotate(0deg);}
+     30%,75%  {transform:rotate(-26deg);}
+     88%      {transform:rotate(-18deg);}
+     94%,100% {transform:rotate(-72deg);}
+  }
+  @keyframes gmArmB{
+     0%,12%   {transform:rotate(0deg);}
+     30%,75%  {transform:rotate(20deg);}
+     90%,100% {transform:rotate(4deg);}
+  }
+  /* counter-rotates so the thumb points straight up in world space */
+  @keyframes thumbPop{
+     0%,90%   {opacity:0; transform:rotate(0deg);}
+     94%      {opacity:1; transform:rotate(72deg);}
+     100%     {opacity:1; transform:rotate(72deg);}
+  }
+
+  /* caregiver: step in, support, travel right with her */
+  @keyframes cgMove{
+     0%      {transform:translate(-70px,0px);}
+     15%     {transform:translate(0px,0px);}
+     30%     {transform:translate(14px,0px);}
+     55%     {transform:translate(74px,0px);}
+     75%     {transform:translate(330px,0px);}
+     90%,100%{transform:translate(346px,0px);}
+  }
+  @keyframes cgLean{
+     0%      {transform:rotate(0deg);}
+     15%     {transform:rotate(4deg);}
+     30%     {transform:rotate(12deg);}
+     55%     {transform:rotate(5deg);}
+     75%     {transform:rotate(4deg);}
+     90%,100%{transform:rotate(0deg);}
+  }
+  /* base geometry IS the support pose; positive rotation swings the arm down */
+  @keyframes cgArmFar{
+     0%      {transform:rotate(32deg);}
+     15%     {transform:rotate(11deg);}
+     30%,75% {transform:rotate(0deg);}
+     90%,100%{transform:rotate(38deg);}
+  }
+  @keyframes cgArmNear{
+     0%      {transform:rotate(34deg);}
+     15%     {transform:rotate(12deg);}
+     30%,75% {transform:rotate(0deg);}
+     90%,100%{transform:rotate(42deg);}
+  }
+  @keyframes cgLegF{
+     0%      {transform:rotate(-6deg);}
+     15%,55% {transform:rotate(4deg);}
+     62%     {transform:rotate(-9deg);}
+     75%,100%{transform:rotate(3deg);}
+  }
+  @keyframes cgLegB{
+     0%      {transform:rotate(7deg);}
+     15%,55% {transform:rotate(-3deg);}
+     62%     {transform:rotate(10deg);}
+     75%,100%{transform:rotate(-2deg);}
+  }
+
+  /* ambient */
+  #curtain{animation:sway 6s ease-in-out infinite;transform-origin:470px 300px;}
+  @keyframes sway{0%,100%{transform:rotate(0deg)}50%{transform:rotate(1.4deg)}}
+</style>
+
+<div class="slide">
+<svg viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wallG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F2EADC"/><stop offset="1" stop-color="#E4D9C6"/>
+    </linearGradient>
+    <linearGradient id="floorG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E7DECE"/><stop offset="1" stop-color="#D9CDB8"/>
+    </linearGradient>
+    <linearGradient id="glassG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D8ECF6"/><stop offset="1" stop-color="#AFD0E4"/>
+    </linearGradient>
+    <radialGradient id="sunG" cx="0.32" cy="0.22" r="0.75">
+      <stop offset="0" stop-color="#FFF3D8" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#FFF3D8" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="winClip"><rect x="108" y="318" width="344" height="394" rx="4"/></clipPath>
+  </defs>
+
+  <!-- ================= ROOM ================= -->
+  <rect x="0" y="0" width="1080" height="1160" fill="url(#wallG)"/>
+  <rect x="0" y="1160" width="1080" height="760" fill="url(#floorG)"/>
+  <rect x="0" y="1128" width="1080" height="34" fill="#CFC2AC"/>
+
+  <!-- 米白磁磚地板 -->
+  <g stroke="#CBBEA6" stroke-width="3" opacity=".85">
+    <line x1="0" y1="1252" x2="1080" y2="1252"/>
+    <line x1="0" y1="1372" x2="1080" y2="1372"/>
+    <line x1="0" y1="1522" x2="1080" y2="1522"/>
+    <line x1="0" y1="1708" x2="1080" y2="1708"/>
+    <line x1="0" y1="1912" x2="1080" y2="1912"/>
+    <line x1="150" y1="1160" x2="60"  y2="1920"/>
+    <line x1="390" y1="1160" x2="370" y2="1920"/>
+    <line x1="630" y1="1160" x2="690" y2="1920"/>
+    <line x1="870" y1="1160" x2="1010" y2="1920"/>
+  </g>
+
+  <!-- 窗戶 + 黑色鐵窗 -->
+  <g>
+    <rect x="88" y="298" width="384" height="434" rx="8" fill="#CBBFA9"/>
+    <rect x="108" y="318" width="344" height="394" rx="4" fill="url(#glassG)"/>
+    <g clip-path="url(#winClip)" opacity=".55">
+      <circle cx="176" cy="404" r="46" fill="#FFFFFF" opacity=".75"/>
+      <circle cx="222" cy="418" r="34" fill="#FFFFFF" opacity=".65"/>
+      <rect x="108" y="620" width="344" height="92" fill="#93B9A0" opacity=".5"/>
+    </g>
+    <!-- 鐵窗直條 -->
+    <g fill="#232323">
+      <rect x="108" y="318" width="344" height="12"/>
+      <rect x="108" y="700" width="344" height="12"/>
+      <rect x="108" y="318" width="12" height="394"/>
+      <rect x="440" y="318" width="12" height="394"/>
+      <rect x="164" y="318" width="9" height="394"/>
+      <rect x="220" y="318" width="9" height="394"/>
+      <rect x="276" y="318" width="9" height="394"/>
+      <rect x="332" y="318" width="9" height="394"/>
+      <rect x="388" y="318" width="9" height="394"/>
+      <rect x="108" y="500" width="344" height="9"/>
+    </g>
+    <g id="curtain">
+      <path d="M452 300 q54 190 30 436 l64 0 0 -436 z" fill="#E9E2D2"/>
+      <path d="M452 300 q40 190 22 436" fill="none" stroke="#D6CCB6" stroke-width="5"/>
+    </g>
+  </g>
+  <rect x="0" y="0" width="1080" height="1920" fill="url(#sunG)"/>
+
+  <!-- ================= 單人木床 ================= -->
+  <g>
+    <rect x="-90" y="1112" width="70" height="340" rx="10" fill="#9C6E45"/>
+    <rect x="-90" y="1302" width="560" height="92" rx="14" fill="#F5F0E6"/>
+    <rect x="-90" y="1300" width="560" height="16" rx="8" fill="#FFFFFF" opacity=".7"/>
+    <path d="M-90 1302 h300 q0 62 -40 92 h-260 z" fill="#C9D8CC"/>
+    <rect x="-70" y="1246" width="196" height="62" rx="24" fill="#FBF7EF"/>
+    <rect x="-90" y="1394" width="560" height="46" rx="8" fill="#A9784E"/>
+    <rect x="-90" y="1394" width="560" height="12" rx="6" fill="#BC8B5E"/>
+    <rect x="386" y="1440" width="34" height="106" rx="8" fill="#8E6339"/>
+    <ellipse cx="180" cy="1566" rx="330" ry="26" fill="#000" opacity=".07"/>
+  </g>
+
+  <!-- ================= 輪椅（後半）：鏡射成朝右，與阿嬤同向 ================= -->
+  <g transform="translate(1700,0) scale(-1,1)">
+    <ellipse cx="866" cy="1592" rx="215" ry="30" fill="#000" opacity=".09"/>
+    <!-- 推把 + 椅背 -->
+    <rect x="946" y="1108" width="26" height="268" rx="12" fill="#39434C"/>
+    <path d="M946 1120 q46 -14 54 -52" fill="none" stroke="#39434C" stroke-width="26" stroke-linecap="round"/>
+    <rect x="792" y="1140" width="160" height="26" rx="12" fill="#4B5A66"/>
+    <path d="M792 1156 q84 -22 160 -16 l0 220 -160 0 z" fill="#55646F"/>
+    <!-- 座墊 -->
+    <rect x="742" y="1338" width="216" height="34" rx="14" fill="#3F4A54"/>
+    <rect x="742" y="1332" width="216" height="14" rx="7" fill="#5C6B77"/>
+    <!-- 扶手 -->
+    <rect x="742" y="1232" width="206" height="20" rx="10" fill="#4B5A66"/>
+    <rect x="742" y="1246" width="18" height="96" rx="9" fill="#4B5A66"/>
+    <!-- 踏板 -->
+    <path d="M742 1372 l-58 168" stroke="#4B5A66" stroke-width="18" stroke-linecap="round" fill="none"/>
+    <rect x="640" y="1536" width="90" height="18" rx="9" fill="#39434C"/>
+    <!-- 遠側大輪 -->
+    <circle cx="906" cy="1452" r="146" fill="none" stroke="#2E373E" stroke-width="12"/>
+    <circle cx="906" cy="1452" r="128" fill="none" stroke="#7A8791" stroke-width="5"/>
+    <g stroke="#8C99A3" stroke-width="4">
+      <line x1="906" y1="1324" x2="906" y2="1580"/>
+      <line x1="778" y1="1452" x2="1034" y2="1452"/>
+      <line x1="815" y1="1361" x2="997" y2="1543"/>
+      <line x1="815" y1="1543" x2="997" y2="1361"/>
+    </g>
+    <circle cx="906" cy="1452" r="20" fill="#4B5A66"/>
+    <!-- 前小輪 -->
+    <circle cx="700" cy="1544" r="46" fill="none" stroke="#2E373E" stroke-width="11"/>
+    <circle cx="700" cy="1544" r="12" fill="#4B5A66"/>
+  </g>
+
+  <!-- ================= 阿嬤 ================= -->
+  <g id="gm" class="anim">
+    <g id="gmTorso">
+      <!-- 遠側手臂 -->
+      <g id="gmArmB" class="anim">
+        <path d="M388 1124 q-52 62 -46 128" fill="none" stroke="#D9A87F" stroke-width="42" stroke-linecap="round"/>
+        <circle cx="343" cy="1258" r="27" fill="#E0B088"/>
+      </g>
+
+      <!-- 腿 -->
+      <g id="gmThigh" class="anim">
+        <path d="M400 1310 q92 8 170 6" fill="none" stroke="#39414F" stroke-width="76" stroke-linecap="round"/>
+        <g id="gmShin" class="anim">
+          <path d="M570 1316 q10 116 8 220" fill="none" stroke="#39414F" stroke-width="66" stroke-linecap="round"/>
+          <path d="M578 1536 q40 6 64 22 q-6 20 -34 20 q-40 0 -52 -14 z" fill="#6E6259"/>
+        </g>
+      </g>
+
+      <!-- 軀幹：花色上衣 -->
+      <path d="M400 1330 q-62 -128 -2 -216 q42 -30 96 -2 q52 96 4 218 z" fill="#E79FA8"/>
+      <path d="M400 1330 q-62 -128 -2 -216 q42 -30 96 -2 q52 96 4 218 z" fill="none" stroke="#D2848F" stroke-width="4"/>
+      <g fill="#FBE3E6" opacity=".92">
+        <circle cx="392" cy="1150" r="9"/><circle cx="438" cy="1132" r="8"/>
+        <circle cx="468" cy="1186" r="9"/><circle cx="408" cy="1226" r="8"/>
+        <circle cx="452" cy="1272" r="9"/><circle cx="386" cy="1284" r="7"/>
+        <circle cx="486" cy="1240" r="7"/><circle cx="424" cy="1180" r="6"/>
+      </g>
+
+      <!-- 頭 -->
+      <g>
+        <path d="M410 1096 q0 -34 6 -50 l44 4 q-4 22 0 46 z" fill="#DCA87E"/>
+        <ellipse cx="437" cy="1000" rx="79" ry="86" fill="#E8BC93"/>
+        <path d="M358 992 q-4 -92 80 -98 q86 -6 82 96 q-16 -44 -50 -54 q-46 22 -112 56 z" fill="#B9B3AD"/>
+        <g fill="#B9B3AD">
+          <circle cx="368" cy="938" r="23"/><circle cx="404" cy="908" r="25"/>
+          <circle cx="446" cy="900" r="25"/><circle cx="488" cy="920" r="23"/>
+          <circle cx="510" cy="958" r="21"/><circle cx="352" cy="982" r="20"/>
+        </g>
+        <!-- 笑眼 + 微笑 -->
+        <path d="M400 1000 q16 -16 32 0" fill="none" stroke="#4A3A2E" stroke-width="7" stroke-linecap="round"/>
+        <path d="M462 998 q15 -15 30 0"  fill="none" stroke="#4A3A2E" stroke-width="7" stroke-linecap="round"/>
+        <path d="M428 1044 q22 20 44 2"  fill="none" stroke="#9C5F52" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="392" cy="1032" r="13" fill="#E79FA8" opacity=".45"/>
+        <circle cx="500" cy="1030" r="13" fill="#E79FA8" opacity=".45"/>
+      </g>
+
+      <!-- 近側手臂：搭在照服員前臂上，最後舉起比讚 -->
+      <g id="gmArmA" class="anim">
+        <path d="M432 1120 q68 54 78 116" fill="none" stroke="#E8BC93" stroke-width="44" stroke-linecap="round"/>
+        <circle cx="512" cy="1244" r="31" fill="#EFC49A"/>
+        <g id="gmThumb" class="anim">
+          <rect x="500" y="1186" width="25" height="56" rx="12" fill="#EFC49A"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ================= 照服員（近側） ================= -->
+  <g id="cg" class="anim">
+    <!-- 後腳 -->
+    <g id="cgLegB" class="anim">
+      <path d="M250 1170 q-40 128 -34 250" fill="none" stroke="#3D4753" stroke-width="72" stroke-linecap="round"/>
+      <path d="M216 1420 q-46 6 -70 24 q6 24 42 24 q46 0 60 -18 z" fill="#EFEAE1"/>
+    </g>
+    <!-- 前腳 -->
+    <g id="cgLegF" class="anim">
+      <path d="M250 1170 q30 130 26 254" fill="none" stroke="#46505E" stroke-width="74" stroke-linecap="round"/>
+      <path d="M276 1424 q48 6 74 26 q-6 24 -44 24 q-48 0 -62 -20 z" fill="#F6F2EA"/>
+    </g>
+
+    <g id="cgTorso">
+      <!-- 遠側手臂：托住阿嬤腰背 -->
+      <g id="cgArmFar" class="anim">
+        <path d="M222 1000 q96 74 172 128" fill="none" stroke="#93BFDD" stroke-width="46" stroke-linecap="round"/>
+        <circle cx="398" cy="1132" r="30" fill="#E3B187"/>
+      </g>
+
+      <!-- 軀幹：淺藍 polo 衫 -->
+      <path d="M250 1196 q-72 -122 -30 -206 q46 -40 104 -6 q46 92 6 212 z" fill="#A8CDE8"/>
+      <path d="M250 1196 q-72 -122 -30 -206 q46 -40 104 -6 q46 92 6 212 z" fill="none" stroke="#8FB6D4" stroke-width="4"/>
+      <path d="M238 986 q26 32 52 4 l-8 -30 q-20 14 -38 0 z" fill="#EFC49A"/>
+      <path d="M226 976 l24 -14 12 34 -14 22 z" fill="#93BFDD"/>
+      <path d="M282 966 l-22 -12 -6 36 18 20 z" fill="#93BFDD"/>
+
+      <!-- 頭 -->
+      <g>
+        <path d="M244 984 q-2 -32 2 -48 l46 2 q-4 24 2 44 z" fill="#DCA87E"/>
+        <ellipse cx="270" cy="884" rx="80" ry="88" fill="#EFC49A"/>
+        <path d="M190 878 q-6 -96 82 -100 q88 -4 84 100 q-14 -50 -46 -62 q-52 30 -120 62 z" fill="#2E2A28"/>
+        <path d="M330 892 q42 26 30 84 q-26 -22 -34 -66 z" fill="#2E2A28"/>
+        <path d="M232 884 q16 -16 32 0" fill="none" stroke="#4A3A2E" stroke-width="7" stroke-linecap="round"/>
+        <path d="M294 882 q16 -16 32 0" fill="none" stroke="#4A3A2E" stroke-width="7" stroke-linecap="round"/>
+        <path d="M262 928 q22 20 44 2" fill="none" stroke="#9C5F52" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="224" cy="916" r="13" fill="#E79FA8" opacity=".4"/>
+        <circle cx="334" cy="914" r="13" fill="#E79FA8" opacity=".4"/>
+      </g>
+
+      <!-- 近側手臂：托住阿嬤側身肋下（畫在最上層） -->
+      <g id="cgArmNear" class="anim">
+        <path d="M286 1004 q108 68 176 136" fill="none" stroke="#A8CDE8" stroke-width="48" stroke-linecap="round"/>
+        <circle cx="462" cy="1140" r="31" fill="#EFC49A"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ================= 輪椅近側大輪（壓在阿嬤前面） ================= -->
+  <g opacity=".97" transform="translate(1700,0) scale(-1,1)">
+    <circle cx="838" cy="1478" r="150" fill="none" stroke="#2E373E" stroke-width="13"/>
+    <circle cx="838" cy="1478" r="131" fill="none" stroke="#8C99A3" stroke-width="5"/>
+    <g stroke="#9BA7B0" stroke-width="4">
+      <line x1="838" y1="1347" x2="838" y2="1609"/>
+      <line x1="707" y1="1478" x2="969" y2="1478"/>
+      <line x1="745" y1="1385" x2="931" y2="1571"/>
+      <line x1="745" y1="1571" x2="931" y2="1385"/>
+    </g>
+    <circle cx="838" cy="1478" r="22" fill="#55646F"/>
+    <rect x="742" y="1330" width="216" height="16" rx="8" fill="#5C6B77"/>
+  </g>
+
+  <!-- 地板反光 -->
+  <ellipse cx="540" cy="1880" rx="620" ry="70" fill="#FFF6E4" opacity=".18"/>
+</svg>
+</div>
