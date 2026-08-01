@@ -1,0 +1,335 @@
+<meta name="hz:canvas-width" content="1080">
+<meta name="hz:canvas-height" content="1920">
+<style>
+  html,body{margin:0;padding:0;background:#000;}
+  .slide{width:1080px;height:1920px;position:relative;overflow:hidden;}
+  svg{display:block;width:1080px;height:1920px;}
+
+  /* ---- master timeline: 11s ---- */
+  .anim{animation-duration:11s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.42,0,.35,1);}
+
+  #minHand {animation-name:minHand; transform-origin:600px 400px;}
+  #hrHand  {animation-name:hrHand;  transform-origin:600px 400px;}
+  #clockRing{animation-name:ding;   transform-origin:600px 400px;}
+
+  #char    {animation-name:charMove;}
+  #head    {animation-name:headLook; transform-origin:385px 940px;}
+  #faceMeh {animation-name:faceMeh;}
+  #faceJoy {animation-name:faceJoy;}
+  #legF    {animation-name:legF; transform-origin:380px 1170px;}
+  #legB    {animation-name:legB; transform-origin:380px 1170px;}
+  #armN    {animation-name:armN; transform-origin:418px 972px;}
+  #armF    {animation-name:armF; transform-origin:348px 968px;}
+  #bagChair{animation-name:bagChair;}
+  #bagBody {animation-name:bagBody;}
+  #deskStuff{animation-name:deskStuff;}
+
+  /* 時鐘：分針掃到整點 */
+  @keyframes minHand{
+    0%      {transform:rotate(300deg);}
+    32%     {transform:rotate(360deg);}
+    100%    {transform:rotate(360deg);}
+  }
+  @keyframes hrHand{
+    0%      {transform:rotate(175deg);}
+    32%,100%{transform:rotate(180deg);}
+  }
+  @keyframes ding{
+    0%,32%  {transform:scale(1);   opacity:0;}
+    35%     {transform:scale(1.10);opacity:.85;}
+    41%     {transform:scale(1.20);opacity:0;}
+    100%    {transform:scale(1.20);opacity:0;}
+  }
+
+  /* 人物：坐著 → 彈起來 → 大步走向門口 */
+  @keyframes charMove{
+    0%,36%  {transform:translate(0px,140px);}
+    44%     {transform:translate(14px,-6px);}
+    52.7%   {transform:translate(34px,0px);}
+    56.1%   {transform:translate(96px,-8px);}
+    59.5%   {transform:translate(158px,0px);}
+    62.9%   {transform:translate(220px,-8px);}
+    66.3%   {transform:translate(282px,0px);}
+    69.7%   {transform:translate(344px,-8px);}
+    73.1%   {transform:translate(406px,0px);}
+    76.5%   {transform:translate(468px,-8px);}
+    80%     {transform:translate(524px,0px);}
+    100%    {transform:translate(534px,0px);}
+  }
+  /* 抬頭看鐘，越看越煩 */
+  @keyframes headLook{
+    0%      {transform:rotate(0deg);}
+    6%      {transform:rotate(-13deg);}
+    12%     {transform:rotate(0deg);}
+    18%     {transform:rotate(-15deg);}
+    24%     {transform:rotate(-2deg);}
+    29%     {transform:rotate(-17deg);}
+    36%     {transform:rotate(-14deg);}
+    44%,100%{transform:rotate(0deg);}
+  }
+  @keyframes faceMeh{ 0%,36%{opacity:1;} 41%,100%{opacity:0;} }
+  @keyframes faceJoy{ 0%,36%{opacity:0;} 41%,100%{opacity:1;} }
+
+  @keyframes legF{
+    0%,52.7%{transform:rotate(0deg);}
+    56.1%   {transform:rotate(-24deg);}
+    59.5%   {transform:rotate(0deg);}
+    62.9%   {transform:rotate(24deg);}
+    66.3%   {transform:rotate(0deg);}
+    69.7%   {transform:rotate(-24deg);}
+    73.1%   {transform:rotate(0deg);}
+    76.5%   {transform:rotate(24deg);}
+    80%,100%{transform:rotate(0deg);}
+  }
+  @keyframes legB{
+    0%,52.7%{transform:rotate(0deg);}
+    56.1%   {transform:rotate(24deg);}
+    59.5%   {transform:rotate(0deg);}
+    62.9%   {transform:rotate(-24deg);}
+    66.3%   {transform:rotate(0deg);}
+    69.7%   {transform:rotate(24deg);}
+    73.1%   {transform:rotate(0deg);}
+    76.5%   {transform:rotate(-24deg);}
+    80%,100%{transform:rotate(0deg);}
+  }
+  /* 近側手：趴在桌上敲手指 → 走路擺動 → 到門口開心舉起來 */
+  @keyframes armN{
+    0%      {transform:rotate(6deg);}
+    8%      {transform:rotate(2deg);}
+    16%     {transform:rotate(7deg);}
+    24%     {transform:rotate(2deg);}
+    36%     {transform:rotate(6deg);}
+    46%     {transform:rotate(-8deg);}
+    56.1%   {transform:rotate(26deg);}
+    62.9%   {transform:rotate(-20deg);}
+    69.7%   {transform:rotate(26deg);}
+    76.5%   {transform:rotate(-20deg);}
+    84%     {transform:rotate(-96deg);}
+    90%     {transform:rotate(-112deg);}
+    95%     {transform:rotate(-96deg);}
+    100%    {transform:rotate(-108deg);}
+  }
+  /* 遠側手：垂著 → 抓住背包帶 */
+  @keyframes armF{
+    0%,36%  {transform:rotate(4deg);}
+    46%     {transform:rotate(-14deg);}
+    52.7%,100%{transform:rotate(-30deg);}
+  }
+  @keyframes bagChair{ 0%,44%{opacity:1;} 48%,100%{opacity:0;} }
+  @keyframes bagBody { 0%,45%{opacity:0;} 50%,100%{opacity:1;} }
+  @keyframes deskStuff{ 0%,42%{opacity:1;} 49%,100%{opacity:0;} }
+
+  #tube{animation:flicker 11s steps(1,end) infinite;}
+  @keyframes flicker{0%,7%{opacity:.95}7.4%{opacity:.55}7.8%{opacity:.95}100%{opacity:.95}}
+</style>
+
+<div class="slide">
+<svg viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9E6DC"/><stop offset="1" stop-color="#D8D3C4"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#CFC3AE"/><stop offset="1" stop-color="#BFB29B"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F5D9A8"/><stop offset="1" stop-color="#D9A98C"/>
+    </linearGradient>
+    <radialGradient id="lampG" cx="0.5" cy="0.1" r="0.9">
+      <stop offset="0" stop-color="#FFFDF0" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#FFFDF0" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="winC"><rect x="88" y="308" width="286" height="316" rx="4"/></clipPath>
+  </defs>
+
+  <!-- ============ 辦公室 ============ -->
+  <rect x="0" y="0" width="1080" height="1180" fill="url(#wall)"/>
+  <rect x="0" y="1180" width="1080" height="740" fill="url(#floor)"/>
+  <rect x="0" y="1150" width="1080" height="34" fill="#B6A98F"/>
+  <g stroke="#B7AA92" stroke-width="3" opacity=".6">
+    <line x1="0" y1="1300" x2="1080" y2="1300"/>
+    <line x1="0" y1="1470" x2="1080" y2="1470"/>
+    <line x1="0" y1="1690" x2="1080" y2="1690"/>
+  </g>
+
+  <!-- 日光燈 -->
+  <g id="tube">
+    <rect x="360" y="96" width="420" height="18" rx="6" fill="#8D8878"/>
+    <rect x="374" y="114" width="392" height="42" rx="14" fill="#FFFEF4"/>
+    <ellipse cx="570" cy="150" rx="330" ry="150" fill="url(#lampG)"/>
+  </g>
+
+  <!-- 窗 + 黑色鐵窗（傍晚光） -->
+  <g>
+    <rect x="70" y="290" width="322" height="352" rx="6" fill="#B9AE99"/>
+    <rect x="88" y="308" width="286" height="316" rx="4" fill="url(#glass)"/>
+    <g clip-path="url(#winC)" opacity=".5">
+      <circle cx="300" cy="560" r="52" fill="#FFF0C8"/>
+      <rect x="88" y="556" width="286" height="68" fill="#8F7F72"/>
+    </g>
+    <g fill="#242424">
+      <rect x="88" y="308" width="286" height="11"/>
+      <rect x="88" y="613" width="286" height="11"/>
+      <rect x="88" y="308" width="11" height="316"/>
+      <rect x="363" y="308" width="11" height="316"/>
+      <rect x="143" y="308" width="8" height="316"/>
+      <rect x="198" y="308" width="8" height="316"/>
+      <rect x="253" y="308" width="8" height="316"/>
+      <rect x="308" y="308" width="8" height="316"/>
+      <rect x="88" y="462" width="286" height="8"/>
+    </g>
+  </g>
+
+  <!-- ============ 掛鐘（完全沒有數字） ============ -->
+  <g>
+    <circle cx="600" cy="400" r="122" fill="#5E5A50"/>
+    <circle cx="600" cy="400" r="110" fill="#FBF8EE"/>
+    <circle cx="600" cy="400" r="110" fill="none" stroke="#3E3A33" stroke-width="7"/>
+    <g fill="#4A4640">
+      <rect x="595" y="304" width="10" height="26" rx="4"/>
+      <rect x="595" y="470" width="10" height="26" rx="4"/>
+      <rect x="504" y="395" width="26" height="10" rx="4"/>
+      <rect x="670" y="395" width="26" height="10" rx="4"/>
+    </g>
+    <g fill="#8A857A">
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(30 600 400)"/>
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(60 600 400)"/>
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(120 600 400)"/>
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(150 600 400)"/>
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(210 600 400)"/>
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(240 600 400)"/>
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(300 600 400)"/>
+      <rect x="597" y="308" width="6" height="16" rx="3" transform="rotate(330 600 400)"/>
+    </g>
+    <g id="hrHand" class="anim"><rect x="593" y="330" width="14" height="80" rx="7" fill="#39352F"/></g>
+    <g id="minHand" class="anim"><rect x="595" y="304" width="10" height="106" rx="5" fill="#39352F"/></g>
+    <circle cx="600" cy="400" r="12" fill="#C0603F"/>
+    <circle id="clockRing" class="anim" cx="600" cy="400" r="128" fill="none" stroke="#E8B23A" stroke-width="9"/>
+  </g>
+
+  <!-- ============ 門 ============ -->
+  <g>
+    <rect x="790" y="576" width="272" height="880" rx="6" fill="#8E7351"/>
+    <rect x="806" y="592" width="240" height="848" rx="4" fill="#A98A62"/>
+    <rect x="828" y="628" width="196" height="330" rx="6" fill="none" stroke="#8E7351" stroke-width="9"/>
+    <rect x="828" y="1000" width="196" height="396" rx="6" fill="none" stroke="#8E7351" stroke-width="9"/>
+    <circle cx="836" cy="1046" r="17" fill="#D8C48A"/>
+  </g>
+
+  <!-- ============ 鐵櫃 ============ -->
+  <g>
+    <rect x="606" y="880" width="168" height="330" rx="6" fill="#9AA1A4"/>
+    <rect x="606" y="880" width="168" height="14" rx="6" fill="#B4BABD"/>
+    <g fill="none" stroke="#7C8386" stroke-width="5">
+      <rect x="620" y="906" width="140" height="86" rx="4"/>
+      <rect x="620" y="1002" width="140" height="86" rx="4"/>
+      <rect x="620" y="1098" width="140" height="86" rx="4"/>
+    </g>
+    <g fill="#6E7578">
+      <rect x="668" y="944" width="44" height="9" rx="4"/>
+      <rect x="668" y="1040" width="44" height="9" rx="4"/>
+      <rect x="668" y="1136" width="44" height="9" rx="4"/>
+    </g>
+    <ellipse cx="690" cy="1218" rx="106" ry="16" fill="#000" opacity=".12"/>
+  </g>
+
+  <!-- ============ 椅子（在人後面） ============ -->
+  <g>
+    <rect x="286" y="1010" width="150" height="128" rx="18" fill="#5B6470"/>
+    <rect x="300" y="1132" width="122" height="26" rx="10" fill="#48505A"/>
+    <!-- 掛在椅背上的包包 -->
+    <g id="bagChair" class="anim">
+      <path d="M300 1030 q42 -22 84 0" fill="none" stroke="#7A5C3E" stroke-width="11"/>
+      <rect x="292" y="1052" width="102" height="82" rx="12" fill="#8B6A47"/>
+      <rect x="292" y="1074" width="102" height="14" fill="#75593C"/>
+    </g>
+  </g>
+
+  <!-- ============ 人物 ============ -->
+  <g id="char" class="anim">
+    <!-- 後腳 -->
+    <g id="legB" class="anim">
+      <path d="M380 1170 q-30 132 -26 250" fill="none" stroke="#3D4753" stroke-width="70" stroke-linecap="round"/>
+      <path d="M354 1420 q-46 6 -68 24 q6 24 40 24 q46 0 58 -18 z" fill="#EFEAE1"/>
+    </g>
+    <!-- 前腳 -->
+    <g id="legF" class="anim">
+      <path d="M380 1170 q34 130 30 252" fill="none" stroke="#46505E" stroke-width="72" stroke-linecap="round"/>
+      <path d="M410 1422 q48 6 74 26 q-6 24 -44 24 q-48 0 -60 -20 z" fill="#F6F2EA"/>
+    </g>
+
+    <!-- 遠側手（抓背帶） -->
+    <g id="armF" class="anim">
+      <path d="M348 968 q-46 96 -42 172" fill="none" stroke="#93BFDD" stroke-width="44" stroke-linecap="round"/>
+      <circle cx="306" cy="1152" r="28" fill="#E3B187"/>
+    </g>
+
+    <!-- 軀幹 polo 衫 -->
+    <path d="M380 1186 q-74 -122 -32 -208 q48 -40 106 -6 q46 92 6 214 z" fill="#A8CDE8"/>
+    <path d="M380 1186 q-74 -122 -32 -208 q48 -40 106 -6 q46 92 6 214 z" fill="none" stroke="#8FB6D4" stroke-width="4"/>
+    <path d="M368 952 q26 32 52 4 l-8 -30 q-20 14 -38 0 z" fill="#EFC49A"/>
+    <path d="M356 942 l24 -14 12 34 -14 22 z" fill="#93BFDD"/>
+    <path d="M412 932 l-22 -12 -6 36 18 20 z" fill="#93BFDD"/>
+
+    <!-- 背在身上的包包 -->
+    <g id="bagBody" class="anim">
+      <path d="M404 962 q-30 96 -66 150" fill="none" stroke="#7A5C3E" stroke-width="13"/>
+      <rect x="292" y="1096" width="104" height="84" rx="13" fill="#8B6A47"/>
+      <rect x="292" y="1120" width="104" height="14" fill="#75593C"/>
+      <circle cx="344" cy="1112" r="7" fill="#6A5036"/>
+    </g>
+
+    <!-- 頭 -->
+    <g id="head" class="anim">
+      <path d="M374 950 q-2 -32 2 -48 l46 2 q-4 24 2 44 z" fill="#DCA87E"/>
+      <ellipse cx="400" cy="850" rx="80" ry="88" fill="#EFC49A"/>
+      <path d="M320 844 q-6 -96 82 -100 q88 -4 84 100 q-14 -50 -46 -62 q-52 30 -120 62 z" fill="#2E2A28"/>
+      <path d="M460 858 q42 26 30 84 q-26 -22 -34 -66 z" fill="#2E2A28"/>
+      <!-- 焦躁臉 -->
+      <g id="faceMeh" class="anim">
+        <circle cx="374" cy="852" r="8" fill="#4A3A2E"/>
+        <circle cx="436" cy="850" r="8" fill="#4A3A2E"/>
+        <path d="M356 826 q18 -12 34 -4" fill="none" stroke="#4A3A2E" stroke-width="6" stroke-linecap="round"/>
+        <path d="M452 822 q-18 -12 -34 -4" fill="none" stroke="#4A3A2E" stroke-width="6" stroke-linecap="round"/>
+        <path d="M386 900 q22 -8 44 0" fill="none" stroke="#9C5F52" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <!-- 超開心臉 -->
+      <g id="faceJoy" class="anim">
+        <path d="M360 848 q16 -18 32 0" fill="none" stroke="#4A3A2E" stroke-width="8" stroke-linecap="round"/>
+        <path d="M422 846 q16 -18 32 0" fill="none" stroke="#4A3A2E" stroke-width="8" stroke-linecap="round"/>
+        <path d="M378 890 q28 40 60 4 q-30 12 -60 -4 z" fill="#9C4A44"/>
+        <circle cx="348" cy="884" r="15" fill="#E79FA8" opacity=".55"/>
+        <circle cx="462" cy="882" r="15" fill="#E79FA8" opacity=".55"/>
+      </g>
+    </g>
+
+    <!-- 近側手 -->
+    <g id="armN" class="anim">
+      <path d="M418 972 q52 100 46 176" fill="none" stroke="#A8CDE8" stroke-width="46" stroke-linecap="round"/>
+      <circle cx="464" cy="1158" r="30" fill="#EFC49A"/>
+    </g>
+  </g>
+
+  <!-- ============ 辦公桌（蓋住坐姿下半身） ============ -->
+  <g>
+    <g id="deskStuff" class="anim">
+      <rect x="150" y="1196" width="92" height="52" rx="6" fill="#E8E2D4"/>
+      <rect x="150" y="1196" width="92" height="12" rx="6" fill="#D3CBB9"/>
+      <path d="M300 1206 h64 v42 h-64 z" fill="#F2EDE0"/>
+      <ellipse cx="424" cy="1226" rx="30" ry="22" fill="#C8D9CE"/>
+      <rect x="418" y="1196" width="12" height="34" rx="6" fill="#C8D9CE"/>
+    </g>
+    <rect x="70" y="1248" width="500" height="28" rx="8" fill="#B98D5F"/>
+    <rect x="70" y="1248" width="500" height="10" rx="5" fill="#CFA274"/>
+    <rect x="86" y="1276" width="26" height="292" rx="6" fill="#8E6A45"/>
+    <rect x="528" y="1276" width="26" height="292" rx="6" fill="#8E6A45"/>
+    <rect x="112" y="1276" width="416" height="292" rx="6" fill="#A87E54"/>
+    <rect x="112" y="1276" width="416" height="112" rx="6" fill="#B08655"/>
+    <g fill="#8E6A45">
+      <rect x="132" y="1320" width="60" height="9" rx="4"/>
+      <rect x="300" y="1320" width="60" height="9" rx="4"/>
+    </g>
+    <ellipse cx="320" cy="1524" rx="270" ry="22" fill="#000" opacity=".1"/>
+  </g>
+</svg>
+</div>
